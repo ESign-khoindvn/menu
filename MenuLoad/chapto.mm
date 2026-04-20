@@ -544,324 +544,144 @@ std::map<int, SelectionState> selectionStates;
 int previousSelection = -1;
 int currentSelection = 0;
 
-bool DrawAimbotBox(const char *label, const char *description, ImFont *italicFont, ImFont *iconFont, const char *uniqueID) {
-  ImDrawList *draw_list = ImGui::GetWindowDrawList();
-  ImVec2 pos = ImGui::GetCursorScreenPos();
-  ImVec2 size = ImVec2(213.0f, 50.0f);
-  ImVec2 end = ImVec2(pos.x + size.x, pos.y + size.y);
+// ─── Animation state map for smooth toggle transitions ───────────────────────
+static std::map<std::string, float> g_toggleAnim; // 0.0 = OFF, 1.0 = ON
 
-  // InvisibleButton bao phủ toàn bộ box để bắt sự kiện click
-  ImGui::SetCursorScreenPos(pos);
-  bool clicked = ImGui::InvisibleButton(uniqueID, size);
+// ─── iOS-style animated Toggle Switch ────────────────────────────────────────
+// Draws a beautiful pill-shaped toggle. Returns true when state changed.
+bool iOSToggle(bool &flag, const char *label, const char *desc, ImFont *descFont, const char *uid) {
+  ImDrawList *dl = ImGui::GetWindowDrawList();
+  ImGuiIO &io = ImGui::GetIO();
 
-  // Vẽ nền
-  draw_list->AddRectFilled(pos, end, IM_COL32(54, 22, 25, 255), 20.0f);
+  // Sizes
+  const float W = 52.0f, H = 30.0f;   // pill size
+  const float ROW_H = 52.0f;
+  ImVec2 rowStart = ImGui::GetCursorScreenPos();
+  float fullWidth = ImGui::GetContentRegionAvail().x;
 
-  // Text chính
-  ImVec2 text1Pos = ImVec2(pos.x + 19.6f, pos.y + 9.0f);
-  ImGui::SetCursorScreenPos(text1Pos);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::SetWindowFontScale(1.9f);
-  ImGui::TextUnformatted(label);
-  ImGui::PopStyleColor();
+  // Invisible button over entire row
+  ImGui::SetCursorScreenPos(rowStart);
+  bool clicked = ImGui::InvisibleButton(uid, ImVec2(fullWidth, ROW_H));
+  bool hovered = ImGui::IsItemHovered();
+  if (clicked) { flag = !flag; TriggerHapticFeedback(); }
 
-  // Text phụ
-  ImVec2 text2Pos = ImVec2(text1Pos.x, text1Pos.y + ImGui::GetFontSize() - 3.0f);
-  ImGui::SetCursorScreenPos(text2Pos);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(181, 101, 114, 255));
-  ImGui::SetWindowFontScale(1.2f);
-  ImGui::PushFont(italicFont);
-  ImGui::TextUnformatted(description);
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
-  ImGui::SetWindowFontScale(3.5f);
-  //   // Text "7" hoặc biểu tượng
-  float textHeight = ImGui::GetFontSize();
-  float centeredY = pos.y + (size.y - textHeight) / 2.0f;
-  ImVec2 text7Pos = ImVec2(pos.x + 173.0f, centeredY - 1.5f);
-  ImGui::SetCursorScreenPos(text7Pos);
-  ImGui::SetWindowFontScale(3.5f);
-
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::PushFont(iconFont);
-
-  // Dùng InvisibleButton với ID duy nhất
-  ImGui::SetCursorScreenPos(text7Pos);
-  ImGui::InvisibleButton(uniqueID, ImVec2(30, 30));
-  draw_list->AddText(text7Pos, IM_COL32(255, 255, 255, 255), "7");
-
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
-
-  return clicked;
-}
-
-bool DrawAimbotBoxdaihon(const char *label, const char *description, ImFont *italicFont, ImFont *iconFont, const char *uniqueID) {
-  ImDrawList *draw_list = ImGui::GetWindowDrawList();
-  ImVec2 pos = ImGui::GetCursorScreenPos();
-  ImVec2 size = ImVec2(350.0f, 50.0f);
-  ImVec2 end = ImVec2(pos.x + size.x, pos.y + size.y);
-
-  // InvisibleButton bao phủ toàn bộ box để bắt sự kiện click
-  ImGui::SetCursorScreenPos(pos);
-  bool clicked = ImGui::InvisibleButton(uniqueID, size);
-
-  // Vẽ nền
-  draw_list->AddRectFilled(pos, end, IM_COL32(54, 22, 25, 255), 15.0f);
-
-  // Text chính
-  ImVec2 text1Pos = ImVec2(pos.x + 19.6f, pos.y + 9.0f);
-  ImGui::SetCursorScreenPos(text1Pos);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::SetWindowFontScale(1.9f);
-  ImGui::TextUnformatted(label);
-  ImGui::PopStyleColor();
-
-  // Text phụ
-  ImVec2 text2Pos = ImVec2(text1Pos.x, text1Pos.y + ImGui::GetFontSize() - 3.0f);
-  ImGui::SetCursorScreenPos(text2Pos);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(181, 101, 114, 255));
-  ImGui::SetWindowFontScale(1.2f);
-  ImGui::PushFont(italicFont);
-  ImGui::TextUnformatted(description);
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
-  ImGui::SetWindowFontScale(3.9f);
-  //   // Text "7" hoặc biểu tượng
-  float textHeight = ImGui::GetFontSize();
-  float centeredY = pos.y + (size.y - textHeight) / 2.0f;
-  ImVec2 text7Pos = ImVec2(pos.x + 300.0f, centeredY - 1.5f);
-  ImGui::SetCursorScreenPos(text7Pos);
-  ImGui::SetWindowFontScale(3.5f);
-
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::PushFont(iconFont);
-
-  // Dùng InvisibleButton với ID duy nhất
-  ImGui::SetCursorScreenPos(text7Pos);
-  ImGui::InvisibleButton(uniqueID, ImVec2(30, 30));
-  draw_list->AddText(text7Pos, IM_COL32(255, 255, 255, 255), "7");
-
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
-
-  return clicked;
-}
-
-bool DrawToggleBox(const char *label, const char *description, const char *uniqueID, bool isActive, ImFont *italicFont, ImFont *iconFont) {
-  ImDrawList *draw_list = ImGui::GetWindowDrawList();
-  ImVec2 pos = ImGui::GetCursorScreenPos();
-  ImVec2 size = ImVec2(150.0f, 50.0f);
-  ImVec2 end = ImVec2(pos.x + size.x, pos.y + size.y);
-
-  // InvisibleButton bao phủ toàn bộ box để bắt sự kiện click
-  ImGui::SetCursorScreenPos(pos);
-  bool clicked = ImGui::InvisibleButton(uniqueID, size);
-
-  // Nền tùy theo trạng thái bật/tắt
-  ImU32 boxColor = isActive ? IM_COL32(255, 86, 102, 255) : IM_COL32(54, 22, 25, 255);
-  draw_list->AddRectFilled(pos, end, boxColor, 15.0f);
-
-  // Text chính
-  ImVec2 text1Pos = ImVec2(pos.x + 15.5f, pos.y + 8.0f);
-  ImGui::SetCursorScreenPos(text1Pos);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::SetWindowFontScale(1.7f);
-  ImGui::TextUnformatted(label);
-  ImGui::PopStyleColor();
-
-  // Text phụ
-  if (isActive) {
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(104, 37, 35, 255));
-  } else {
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(181, 101, 114, 255));
+  // Row hover highlight
+  if (hovered) {
+    dl->AddRectFilled(rowStart,
+                      ImVec2(rowStart.x + fullWidth, rowStart.y + ROW_H),
+                      IM_COL32(255, 255, 255, 10), 12.0f);
   }
-  ImVec2 text2Pos = ImVec2(text1Pos.x, text1Pos.y + ImGui::GetFontSize() - 2.0f);
-  ImGui::SetCursorScreenPos(text2Pos);
-  ImGui::SetWindowFontScale(1.1f);
-  ImGui::PushFont(italicFont);
-  ImGui::TextUnformatted(description);
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
 
-  // Icon hoặc ký tự đặc biệt (nếu cần)
-  float textHeight = ImGui::GetFontSize();
-  float centeredY = pos.y + (size.y - textHeight) / 2.0f;
-  ImVec2 iconPos = ImVec2(pos.x + size.x - 40.0f, centeredY - 18.0f);
-  ImGui::SetCursorScreenPos(iconPos);
-  ImGui::SetWindowFontScale(3.6f);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::PushFont(iconFont);
-  draw_list->AddText(iconPos, IM_COL32(255, 255, 255, 255), "7");
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
+  // Separator line at bottom
+  dl->AddLine(ImVec2(rowStart.x + 8, rowStart.y + ROW_H - 1),
+              ImVec2(rowStart.x + fullWidth - 8, rowStart.y + ROW_H - 1),
+              IM_COL32(255, 255, 255, 18));
 
-  return clicked;
-}
-
-bool DrawToggleBoxdaihon2(const char *label, const char *description, const char *uniqueID, bool isActive, ImFont *italicFont, ImFont *iconFont) {
-  ImDrawList *draw_list = ImGui::GetWindowDrawList();
-  ImVec2 pos = ImGui::GetCursorScreenPos();
-  ImVec2 size = ImVec2(190.0f, 50.0f);
-  ImVec2 end = ImVec2(pos.x + size.x, pos.y + size.y);
-
-  // InvisibleButton bao phủ toàn bộ box để bắt sự kiện click
-  ImGui::SetCursorScreenPos(pos);
-  bool clicked = ImGui::InvisibleButton(uniqueID, size);
-
-  // Nền tùy theo trạng thái bật/tắt
-  ImU32 boxColor = isActive ? IM_COL32(255, 86, 102, 255) : IM_COL32(54, 22, 25, 255);
-  draw_list->AddRectFilled(pos, end, boxColor, 15.0f);
-
-  // Text chính
-  ImVec2 text1Pos = ImVec2(pos.x + 15.5f, pos.y + 8.0f);
-  ImGui::SetCursorScreenPos(text1Pos);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::SetWindowFontScale(1.7f);
+  // ── Label ──
+  ImVec2 textPos = ImVec2(rowStart.x + 14.0f, rowStart.y + 7.0f);
+  ImGui::SetCursorScreenPos(textPos);
+  ImGui::SetWindowFontScale(1.55f);
+  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(240, 240, 245, 255));
   ImGui::TextUnformatted(label);
   ImGui::PopStyleColor();
 
-  // Text phụ
-  if (isActive) {
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(104, 37, 35, 255));
-  } else {
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(181, 101, 114, 255));
+  // ── Description ──
+  if (descFont && desc && desc[0] != '\0') {
+    ImGui::SetCursorScreenPos(ImVec2(textPos.x, textPos.y + 20.0f));
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PushFont(descFont);
+    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(140, 140, 155, 255));
+    ImGui::TextUnformatted(desc);
+    ImGui::PopStyleColor();
+    ImGui::PopFont();
   }
-  ImVec2 text2Pos = ImVec2(text1Pos.x, text1Pos.y + ImGui::GetFontSize() - 2.0f);
-  ImGui::SetCursorScreenPos(text2Pos);
-  ImGui::SetWindowFontScale(1.1f);
-  ImGui::PushFont(italicFont);
-  ImGui::TextUnformatted(description);
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
 
-  // Icon hoặc ký tự đặc biệt (nếu cần)
-  float textHeight = ImGui::GetFontSize();
-  float centeredY = pos.y + (size.y - textHeight) / 2.0f;
-  ImVec2 iconPos = ImVec2(pos.x + size.x - 40.0f, centeredY - 18.0f);
-  ImGui::SetCursorScreenPos(iconPos);
-  ImGui::SetWindowFontScale(3.6f);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::PushFont(iconFont);
-  draw_list->AddText(iconPos, IM_COL32(255, 255, 255, 255), "7");
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
+  // ── Animated toggle pill ──
+  std::string key = std::string(uid);
+  float &t = g_toggleAnim[key];
+  float target = flag ? 1.0f : 0.0f;
+  float speed = 6.0f;
+  if (t < target) t = ImMin(t + io.DeltaTime * speed, target);
+  else             t = ImMax(t - io.DeltaTime * speed, target);
 
+  ImVec2 pillPos = ImVec2(rowStart.x + fullWidth - W - 14.0f,
+                          rowStart.y + (ROW_H - H) * 0.5f);
+  ImVec2 pillEnd = ImVec2(pillPos.x + W, pillPos.y + H);
+
+  // Pill background — interpolate grey → cyan
+  ImU32 offColor = IM_COL32(58, 58, 68, 255);
+  ImU32 onColor  = IM_COL32(10, 200, 255, 255);
+  auto lerpCol = [](ImU32 a, ImU32 b, float f) -> ImU32 {
+    float r = ((a >> 0)  & 0xff) + (((b >> 0)  & 0xff) - ((a >> 0)  & 0xff)) * f;
+    float g = ((a >> 8)  & 0xff) + (((b >> 8)  & 0xff) - ((a >> 8)  & 0xff)) * f;
+    float bl= ((a >> 16) & 0xff) + (((b >> 16) & 0xff) - ((a >> 16) & 0xff)) * f;
+    return IM_COL32((int)r, (int)g, (int)bl, 255);
+  };
+  dl->AddRectFilled(pillPos, pillEnd, lerpCol(offColor, onColor, t), H * 0.5f);
+
+  // Thumb shadow glow when ON
+  if (t > 0.01f) {
+    dl->AddRectFilled(pillPos, pillEnd,
+                      IM_COL32(10, 200, 255, (int)(40 * t)), H * 0.5f);
+  }
+
+  // Thumb circle
+  float thumbTravel = W - H;
+  float thumbX = pillPos.x + 3.0f + thumbTravel * t;
+  float thumbY = pillPos.y + H * 0.5f;
+  float thumbR = H * 0.5f - 3.0f;
+  dl->AddCircleFilled(ImVec2(thumbX + thumbR, thumbY), thumbR, IM_COL32(255, 255, 255, 255), 32);
+
+  ImGui::SetCursorScreenPos(ImVec2(rowStart.x, rowStart.y + ROW_H + 2.0f));
   return clicked;
 }
 
-bool DrawToggleBoxdaihon(const char *label, const char *description, const char *uniqueID, bool isActive, ImFont *italicFont, ImFont *iconFont) {
-  ImDrawList *draw_list = ImGui::GetWindowDrawList();
+// ─── iOS-style Feature Card (tap to navigate / action) ───────────────────────
+bool iOSCard(const char *label, const char *desc, ImFont *descFont, const char *uid, float cardWidth = -1.0f) {
+  ImDrawList *dl = ImGui::GetWindowDrawList();
   ImVec2 pos = ImGui::GetCursorScreenPos();
-  ImVec2 size = ImVec2(250.0f, 50.0f);
-  ImVec2 end = ImVec2(pos.x + size.x, pos.y + size.y);
+  float w = (cardWidth > 0) ? cardWidth : ImGui::GetContentRegionAvail().x;
+  const float H = 56.0f;
+  ImVec2 end = ImVec2(pos.x + w, pos.y + H);
 
-  // InvisibleButton bao phủ toàn bộ box để bắt sự kiện click
   ImGui::SetCursorScreenPos(pos);
-  bool clicked = ImGui::InvisibleButton(uniqueID, size);
+  bool clicked = ImGui::InvisibleButton(uid, ImVec2(w, H));
+  bool hov = ImGui::IsItemHovered();
 
-  // Nền tùy theo trạng thái bật/tắt
-  ImU32 boxColor = isActive ? IM_COL32(255, 86, 102, 255) : IM_COL32(54, 22, 25, 255);
-  draw_list->AddRectFilled(pos, end, boxColor, 15.0f);
+  // Card background
+  ImU32 bg = hov ? IM_COL32(255, 255, 255, 22) : IM_COL32(255, 255, 255, 11);
+  dl->AddRectFilled(pos, end, bg, 14.0f);
+  dl->AddRect(pos, end, IM_COL32(255, 255, 255, 28), 14.0f, 0, 1.0f);
 
-  // Text chính
-  ImVec2 text1Pos = ImVec2(pos.x + 15.5f, pos.y + 8.0f);
-  ImGui::SetCursorScreenPos(text1Pos);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::SetWindowFontScale(1.7f);
+  // Label
+  ImGui::SetCursorScreenPos(ImVec2(pos.x + 14, pos.y + 9));
+  ImGui::SetWindowFontScale(1.55f);
+  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(240, 240, 245, 255));
   ImGui::TextUnformatted(label);
   ImGui::PopStyleColor();
 
-  // Text phụ
-  if (isActive) {
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(104, 37, 35, 255));
-  } else {
-    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(181, 101, 114, 255));
+  // Description
+  if (descFont && desc && desc[0] != '\0') {
+    ImGui::SetCursorScreenPos(ImVec2(pos.x + 14, pos.y + 30));
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::PushFont(descFont);
+    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(130, 130, 145, 255));
+    ImGui::TextUnformatted(desc);
+    ImGui::PopStyleColor();
+    ImGui::PopFont();
   }
-  ImVec2 text2Pos = ImVec2(text1Pos.x, text1Pos.y + ImGui::GetFontSize() - 2.0f);
-  ImGui::SetCursorScreenPos(text2Pos);
-  ImGui::SetWindowFontScale(1.1f);
-  ImGui::PushFont(italicFont);
-  ImGui::TextUnformatted(description);
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
 
-  // Icon hoặc ký tự đặc biệt (nếu cần)
-  float textHeight = ImGui::GetFontSize();
-  float centeredY = pos.y + (size.y - textHeight) / 2.0f;
-  ImVec2 iconPos = ImVec2(pos.x + size.x - 40.0f, centeredY - 18.0f);
-  ImGui::SetCursorScreenPos(iconPos);
-  ImGui::SetWindowFontScale(3.6f);
-  ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
-  ImGui::PushFont(iconFont);
-  draw_list->AddText(iconPos, IM_COL32(255, 255, 255, 255), "7");
-  ImGui::PopFont();
-  ImGui::PopStyleColor();
+  // Chevron arrow →
+  ImVec2 chevPos = ImVec2(end.x - 22.0f, pos.y + (H - 14.0f) * 0.5f);
+  dl->AddText(chevPos, IM_COL32(120, 120, 135, 255), ">");
 
+  if (clicked) TriggerHapticFeedback();
+  ImGui::SetCursorScreenPos(ImVec2(pos.x, pos.y + H + 8.0f));
   return clicked;
 }
+
 bool Checkbox(bool &funcFlag, const char *funcLabel, const char *funcDescription, ImFont *productSansFont) {
-  bool changed = false;
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(9, 9));
-  float cursorX = ImGui::GetCursorPosX();
-  ImVec4 red = ImVec4(255 / 255.0f, 86 / 255.0f, 102 / 255.0f, 1.0f);
-  float checkboxWidth = ImGui::GetFrameHeight();
-  float spacing = 5.0f;
-
-  if (funcFlag) {
-    ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, red);
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-  } else {
-    ImVec4 xam = ImVec4(0.6f, 0.6f, 0.6f,
-                        1.0f);  // Define xam if not already defined globally
-    ImGui::PushStyleColor(ImGuiCol_CheckMark, xam);
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(50.0f / 255.0f, 50.0f / 255.0f, 50.0f / 255.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-    ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.38f, 0.38f, 0.38f, 1.0f));
-  }
-
-  if (ImGui::Checkbox(funcLabel, &funcFlag)) {
-    TriggerHapticFeedback();
-    changed = true;
-  }
-
-  ImGui::PopStyleColor(4);
-  ImGui::SameLine(checkboxWidth + spacing + cursorX);
-  ImVec2 cursorPos = ImGui::GetCursorPos();
-  ImGui::SetCursorPosY(cursorPos.y - 6.0f);
-  ImGui::BeginGroup();
-
-  ImGui::SetWindowFontScale(1.6f);
-  ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0, 0, 0, 0));
-  ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0, 0, 0, 0));
-  ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0, 0, 0, 0));
-
-  if (ImGui::Selectable(funcLabel, false, ImGuiSelectableFlags_None)) {
-    funcFlag = !funcFlag;
-    TriggerHapticFeedback();
-    changed = true;
-  }
-
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3.0f);
-  ImGui::PushFont(productSansFont);
-  ImGui::SetWindowFontScale(1.0f);
-  ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(160.0f / 255.0f, 160.0f / 255.0f, 160.0f / 255.0f, 1.0f));
-
-  if (ImGui::Selectable(funcDescription, false, ImGuiSelectableFlags_None)) {
-    funcFlag = !funcFlag;
-    TriggerHapticFeedback();
-    changed = true;
-  }
-
-  ImGui::PopFont();
-  ImGui::PopStyleVar();
-  ImGui::PopStyleColor();  // Text
-  ImGui::EndGroup();
-  ImGui::PopStyleColor(3);  // Header
-
-  return changed;
+  return iOSToggle(funcFlag, funcLabel, funcDescription, productSansFont, funcLabel);
 }
 
 - (void)updateIOWithTouchEvent:(UIEvent *)event {
@@ -1165,341 +985,285 @@ bool Checkbox(bool &funcFlag, const char *funcLabel, const char *funcDescription
         }
       }
 
-      // XÓA TOÀN BỘ BACKGROUND IMAGES CŨ
-      // Thiết kế UI VALO/AOV Theme mới (Dynamic Layout)
-      
-      // Vẽ nền tổng thể bo góc của cửa sổ
-      draw->AddRectFilled(windowPos, ImVec2(windowPos.x + windowSize.x, windowPos.y + windowSize.y), IM_COL32(15, 15, 18, 245), 15.0f);
-      draw->AddRect(windowPos, ImVec2(windowPos.x + windowSize.x, windowPos.y + windowSize.y), IM_COL32(255, 70, 85, 50), 15.0f, 0, 1.0f);
+      // ══════════════════════════════════════════════════════════════════
+      // NEW iOS GLASSMORPHISM LAYOUT
+      // ══════════════════════════════════════════════════════════════════
 
-      // Nút Tắt Menu (CloseBtn)
+      const float DOCK_H   = 58.0f;
+      const float HEADER_H = 48.0f;
+
+      // ─── Glass Background ────────────────────────────────────────────
+      // Outer frosted glass panel
+      draw->AddRectFilled(windowPos,
+                          ImVec2(windowPos.x + windowSize.x, windowPos.y + windowSize.y),
+                          IM_COL32(12, 12, 16, 230), 20.0f);
+      // Subtle inner highlight on top edge (glass shine)
+      draw->AddRectFilled(windowPos,
+                          ImVec2(windowPos.x + windowSize.x, windowPos.y + 1.5f),
+                          IM_COL32(255, 255, 255, 35), 20.0f);
+      // Outer border
+      draw->AddRect(windowPos,
+                    ImVec2(windowPos.x + windowSize.x, windowPos.y + windowSize.y),
+                    IM_COL32(255, 255, 255, 30), 20.0f, 0, 1.2f);
+
+      // ─── Header Bar ──────────────────────────────────────────────────
       {
-        ImVec2 squareSize = ImVec2(35.0f, 35.0f);
-        ImVec2 squarePos = ImVec2(windowPos.x + windowSize.x - squareSize.x - 10.0f, windowPos.y + 10.0f);
-        ImGui::SetCursorScreenPos(squarePos);
-        if (ImGui::InvisibleButton("CloseBtn", squareSize)) {
+        ImVec2 hdrPos = windowPos;
+        ImVec2 hdrEnd = ImVec2(windowPos.x + windowSize.x, windowPos.y + HEADER_H);
+        draw->AddRectFilled(hdrPos, hdrEnd, IM_COL32(255, 255, 255, 8), 0.0f);
+        draw->AddLine(ImVec2(hdrPos.x + 16, hdrEnd.y),
+                      ImVec2(hdrEnd.x - 16, hdrEnd.y),
+                      IM_COL32(255, 255, 255, 20));
+
+        // Title text
+        ImGui::SetCursorScreenPos(ImVec2(hdrPos.x + 20, hdrPos.y + 12));
+        ImGui::SetWindowFontScale(1.9f);
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 230));
+        ImGui::TextUnformatted("TRUONGMODS");
+        ImGui::PopStyleColor();
+
+        // Cyan accent dot
+        draw->AddCircleFilled(ImVec2(hdrPos.x + 155, hdrPos.y + HEADER_H * 0.5f),
+                              4.5f, IM_COL32(10, 200, 255, 220), 16);
+
+        // SAFE badge
+        ImVec2 badgePos  = ImVec2(hdrPos.x + 168, hdrPos.y + 13);
+        ImVec2 badgeEnd2 = ImVec2(badgePos.x + 58, badgePos.y + 20);
+        draw->AddRectFilled(badgePos, badgeEnd2, IM_COL32(10, 200, 255, 40), 10.0f);
+        draw->AddRect(badgePos, badgeEnd2, IM_COL32(10, 200, 255, 100), 10.0f, 0, 1.0f);
+        ImGui::SetCursorScreenPos(ImVec2(badgePos.x + 8, badgePos.y + 2));
+        ImGui::SetWindowFontScale(1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(10, 200, 255, 220));
+        ImGui::TextUnformatted("SAFE");
+        ImGui::PopStyleColor();
+
+        // Close button (X)
+        ImVec2 closePos = ImVec2(hdrEnd.x - 40, hdrPos.y + (HEADER_H - 28) * 0.5f);
+        ImGui::SetCursorScreenPos(closePos);
+        if (ImGui::InvisibleButton("iosClose", ImVec2(28, 28))) {
           MenDeal = false;
         }
-        draw->AddRectFilled(squarePos, ImVec2(squarePos.x + squareSize.x, squarePos.y + squareSize.y), IM_COL32(255, 70, 85, 20), 8.0f);
-        draw->AddRect(squarePos, ImVec2(squarePos.x + squareSize.x, squarePos.y + squareSize.y), IM_COL32(255, 70, 85, 80), 8.0f);
-        
-        ImGui::PushFont(self.icon131);
-        ImGui::SetWindowFontScale(1.6f);
-        ImVec2 symbolSize = ImGui::CalcTextSize("`");
-        draw->AddText(squarePos + (squareSize - symbolSize) / 2.0f, IM_COL32(255, 255, 255, 255), "`");
-        ImGui::PopFont();
+        bool closehov = ImGui::IsItemHovered();
+        draw->AddCircleFilled(ImVec2(closePos.x + 14, closePos.y + 14), 14.0f,
+                              closehov ? IM_COL32(255,80,80,200) : IM_COL32(255,255,255,18), 20);
+        ImGui::SetCursorScreenPos(ImVec2(closePos.x + 8, closePos.y + 5));
+        ImGui::SetWindowFontScale(1.4f);
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 200));
+        ImGui::TextUnformatted("x");
+        ImGui::PopStyleColor();
       }
 
-      // SIDEBAR (Left Column)
-      ImGui::SetCursorPos(ImVec2(10, 10));
-      ImGui::BeginChild("Sidebar", ImVec2(70, windowSize.y - 20), false, ImGuiWindowFlags_NoScrollbar);
-      ImVec2 sbPos = ImGui::GetWindowPos();
-      ImDrawList *sbDraw = ImGui::GetWindowDrawList();
-      sbDraw->AddRectFilled(sbPos, ImVec2(sbPos.x + 70, sbPos.y + windowSize.y - 20), IM_COL32(25, 25, 30, 255), 12.0f);
+      // ─── Scrollable Content Area ──────────────────────────────────────
+      float contentH = windowSize.y - HEADER_H - DOCK_H - 8;
+      ImGui::SetCursorPos(ImVec2(0, HEADER_H + 4));
+      ImGui::BeginChild("##iosContent", ImVec2(windowSize.x, contentH), false,
+                        ImGuiWindowFlags_NoScrollbar);
+      ImGui::SetWindowFontScale(1.45f);
+      ImGui::Indent(14.0f);
 
-      float btnWidth = 50.0f;
-      float btnHeight = 50.0f;
-      float startY = sbPos.y + 20.0f;
-      
-      // Mapping Tab numbers (Skipping ESP - Tab 4)
-      // 1: Home, 2: Aimbot, 3: Autoplay, 5: Mod, 6: Info, 7: Extra
-      int displayTabs[] = {1, 2, 3, 5, 6, 7};
-      const char* icons[] = {" 1 ", " 2 ", " 3 ", " 5 ", " 6 ", " 7 "}; 
+      // ── TAB CONTENT ──────────────────────────────────────────────────
+      if (Settings::Tab == 1) {
+        // HOME — 2-column quick toggle grid
+        ImGui::Spacing();
+        iOSToggle(MapHack,    "Map Hack",    "Hiện toàn bộ tầm nhìn bản đồ",  self.italic, "t_maphack");
+        iOSToggle(CamSieuXa,  "Cam Siêu Xa","Tăng tầm nhìn camera xa hơn",   self.italic, "t_camxa");
+        iOSToggle(Avan,       "Hiện Ulti",  "Hiển thị hồi chiêu ult địch",    self.italic, "t_avan");
+        iOSToggle(hiensp,     "Hiện SP",    "Hiển thị phép bổ trợ địch",      self.italic, "t_hiensp");
+        iOSToggle(hiendanh,   "Hiện Tên",   "Hiển thị tên tướng địch",        self.italic, "t_hiendanh");
+        iOSToggle(SieuFPS,    "Mượt Game",  "Tăng tốc lên 120 FPS",           self.italic, "t_sieufps");
+        ImGui::Spacing();
+        // Quick-nav cards
+        if (iOSCard("Aimbot",    "Ghim chiêu định hướng tướng",   self.italic, "nav_aim"))    { Settings::Tab = 2; }
+        if (iOSCard("Autoplay",  "Macro tự động kỹ năng",          self.italic, "nav_auto"))   { Settings::Tab = 3; }
+        if (iOSCard("Mod Skin",  "Mod ngoại hình & rank",          self.italic, "nav_mod"))    { Settings::Tab = 5; }
+        if (iOSCard("Extra",     "Chức năng giải trí",             self.italic, "nav_extra"))  { Settings::Tab = 7; }
 
-      ImGui::PushFont(self.icon131);
-      ImGui::SetWindowFontScale(2.5f);
-      for (int i = 0; i < 6; ++i) {
-        int tabValue = displayTabs[i];
-        ImVec2 pos = ImVec2(sbPos.x + 10.0f, startY + i * (btnHeight + 10.0f));
-        ImGui::SetCursorScreenPos(pos);
-        
-        char btnId[8];
-        sprintf(btnId, "sbtn%d", tabValue);
-        bool isHovered = false;
-        if (ImGui::InvisibleButton(btnId, ImVec2(btnWidth, btnHeight))) {
-          Settings::Tab = tabValue;
+      } else if (Settings::Tab == 2) {
+        // AIMBOT
+        ImGui::Spacing();
+        iOSToggle(Aimbot,      "Aimbot",        "Bật tắt toàn bộ hệ thống aimbot",  self.italic, "t_aimbot");
+        if (Aimbot) {
+          iOSToggle(AimbotElsu,  "Aimbot Elsu",  "Ghim chiêu 2 Elsu",    self.italic, "t_aelsu");
+          iOSToggle(AimbotYorn,  "Aimbot Yorn",  "Ghim chiêu Yorn",       self.italic, "t_ayorn");
+          iOSToggle(AimbotJoker, "Aimbot Joker", "Ghim chiêu Joker",      self.italic, "t_ajoker");
+          iOSToggle(AimbotGrakk, "Aimbot Grakk", "Ghim chiêu Grakk",      self.italic, "t_agrakk");
+          iOSToggle(AimbotIggy,  "Aimbot Iggy",  "Ghim chiêu Iggy",       self.italic, "t_aiggy");
+          iOSToggle(AimbotRyoma, "Aimbot Ryoma", "Ghim chiêu Ryoma",      self.italic, "t_aryoma");
+          iOSToggle(AimbotGildur,"Aimbot Gildur","Ghim chiêu Gildur",     self.italic, "t_agildur");
+          iOSToggle(AimbotRaz,   "Aimbot Raz",   "Ghim chiêu Raz",        self.italic, "t_araz");
+          iOSToggle(AimbotIllu,  "Aimbot Illumia","Ghim chiêu Illumia",   self.italic, "t_aillu");
+          iOSToggle(AimbotDirak, "Aimbot Dirak", "Ghim chiêu Dirak",      self.italic, "t_adirak");
+        }
+
+      } else if (Settings::Tab == 3) {
+        // AUTOPLAY
+        ImGui::Spacing();
+        iOSToggle(macrotudong,   "Macro Tự Động", "Đánh liên hoàn tự động",              self.italic, "t_macro");
+        iOSToggle(AutoBocPha,    "Auto Bộc Phá",  "Tự động dùng bộc phá",                self.italic, "t_bocpha");
+        iOSToggle(AutoTrungTri,  "Auto Trừng Trị","Tự động trừng trị quái",              self.italic, "t_trungtri");
+        iOSToggle(RongTaThan,    "Rồng / Tà Thần","Ưu tiên giật rồng & tà thần",         self.italic, "t_rongtathan");
+        iOSToggle(AutoChoang,    "Auto Choáng",   "Tự động dùng kỹ năng choáng",         self.italic, "t_choang");
+        iOSToggle(AutoQuacam,    "Auto Quả Cầu",  "Tự kích hoạt quả cầu phép",           self.italic, "t_quacau");
+        iOSToggle(AutoNhamThach, "Auto Nham Thạch","Tự kích hoạt nham thạch",            self.italic, "t_nhamthach");
+        iOSToggle(TuMuaBan,      "Tự Động Mua Bán","Tự đổi trang bị & bán đồ thừa",     self.italic, "t_muaban");
+
+      } else if (Settings::Tab == 5) {
+        // MOD SKIN
+        ImGui::Spacing();
+        if (iOSCard("Mod Skin File", "Mod ngoại hình qua file/link", self.italic, "btnModSkin")) {
+          thongbaomodskin = true;
+        }
+        if (iOSCard("Xóa Mod", "Xóa mod skin / cập nhật lại", self.italic, "btnXoaMod")) {
+          MenDeal = false;
+          UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"XOÁ MOD SKIN ?" message:nil preferredStyle:UIAlertControllerStyleAlert];
+          UIAlertAction *clear = [UIAlertAction actionWithTitle:@"XOÁ MOD SKIN" style:UIAlertActionStyleDefault handler:^(UIAlertAction *_Nonnull action) { [ModSkinDSGM RemoveModDSGM]; }];
+          UIAlertAction *force = [UIAlertAction actionWithTitle:@"FORCE UPDATE" style:UIAlertActionStyleDefault handler:^(UIAlertAction *_Nonnull action) { [[maintool sharemain] xoamod]; }];
+          UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault handler:nil];
+          [alert addAction:clear]; [alert addAction:force]; [alert addAction:okAction];
+          UIViewController *viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
+          [viewController presentViewController:alert animated:YES completion:nil];
           TriggerHapticFeedback();
         }
-        isHovered = ImGui::IsItemHovered();
-        bool isActive = (Settings::Tab == tabValue);
-
-        ImU32 btnBgColor = isActive ? IM_COL32(255, 70, 85, 255) : (isHovered ? IM_COL32(50, 50, 60, 255) : IM_COL32(0,0,0,0));
-        sbDraw->AddRectFilled(pos, ImVec2(pos.x + btnWidth, pos.y + btnHeight), btnBgColor, 10.0f);
-        
-        if (isActive) {
-          sbDraw->AddRectFilled(ImVec2(pos.x-2, pos.y-2), ImVec2(pos.x + btnWidth+2, pos.y + btnHeight+2), IM_COL32(255, 70, 85, 50), 10.0f);
+        if (iOSCard("Save Account", "Đổi tài khoản nhanh", self.italic, "btnSaveAcc")) {
+          MenDeal = false;
+          [[maintool sharemain] LoadAcc];
+          [[maintool sharemain] ChangeAccount];
+          TriggerHapticFeedback();
         }
-
-        ImU32 textColor = isActive ? IM_COL32(255, 255, 255, 255) : IM_COL32(150, 150, 150, 255);
-        ImVec2 textSize = ImGui::CalcTextSize(icons[i]);
-        sbDraw->AddText(pos + (ImVec2(btnWidth, btnHeight) - textSize) * 0.5f, textColor, icons[i]);
-      }
-      ImGui::PopFont();
-      ImGui::EndChild();
-
-      // CONTENT (Right Column)
-      ImGui::SetCursorPos(ImVec2(90, 10));
-      ImGui::BeginChild("Content", ImVec2(windowSize.x - 100, windowSize.y - 20), false);
-      ImFont *font = ImGui::GetIO().Fonts->Fonts[0];
-      ImGui::PushFont(font);
-      ImVec2 ctPos = ImGui::GetWindowPos();
-      ImDrawList *ctDraw = ImGui::GetWindowDrawList();
-
-      if (Settings::Tab == 1) {
-        // TAB 1: HOME (VALO THEME BANNER)
-        ImGui::SetWindowFontScale(2.2f);
-        ctDraw->AddText(ctPos + ImVec2(10, 5), IM_COL32(255, 70, 85, 255), "CHÀO BUỔI SÁNG,");
-        ctDraw->AddText(ctPos + ImVec2(190, 5), IM_COL32(255, 255, 255, 255), "PLAYER");
-        
-        // Banner LQMB HACK VIP
-        ImVec2 bannerPos = ctPos + ImVec2(10, 45);
-        ImVec2 bannerSize = ImVec2(350, 110);
-        ctDraw->AddRectFilled(bannerPos, bannerPos + bannerSize, IM_COL32(255, 70, 85, 255), 15.0f);
-        ctDraw->AddRectFilled(bannerPos + ImVec2(0, bannerSize.y - 30), bannerPos + bannerSize, IM_COL32(200, 40, 55, 255), 15.0f);
-        
-        ImGui::SetWindowFontScale(2.8f);
-        ctDraw->AddText(bannerPos + ImVec2(15, 15), IM_COL32(255, 255, 255, 255), "LQMB HACK VIP");
-        ImGui::SetWindowFontScale(1.1f);
-        ctDraw->AddText(bannerPos + ImVec2(15, 55), IM_COL32(255, 200, 200, 255), "PHIÊN BẢN VALO THEME 2026");
-        ctDraw->AddText(bannerPos + ImVec2(15, 85), IM_COL32(255, 255, 255, 255), "TÌNH TRẠNG: AN TOÀN (SAFE)");
-
-        // Grid of checkboxes below banner
-        ImGui::SetWindowFontScale(1.5f);
-        float cbY = bannerPos.y + bannerSize.y + 20.0f;
-        
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, cbY));
-        Checkbox(MapHack, "Map Hack", "Hiển Thị Tầm Nhìn", self.italic);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, cbY));
-        Checkbox(CamSieuXa, "Cam Xa", "Tăng Tầm Nhìn Đẹp", self.italic);
-
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, cbY + 45));
-        Checkbox(Avan, "Hiện Ulti", "Hiển Thị Hồi Chiêu Cuối", self.italic);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, cbY + 45));
-        Checkbox(hiensp, "Hiện Sp", "Hiển thị phép bổ trợ", self.italic);
-
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, cbY + 90));
-        Checkbox(hiendanh, "Hiện Tên", "Hiển thị Tên Địch", self.italic);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, cbY + 90));
-        Checkbox(SieuFPS, "Mượt Game", "Tăng Tốc 120 FPS", self.italic);
-
-        // Right side big buttons
-        float rightColX = ctPos.x + 380;
-        ImGui::SetCursorScreenPos(ImVec2(rightColX, ctPos.y + 45));
-        if (DrawAimbotBox("AIMBOT", "Aimbot Tướng Elsu, Gildur", self.italic, self.icon131, "btnAimbot")) { Settings::Tab = 2; TriggerHapticFeedback(); }
-        
-        ImGui::SetCursorScreenPos(ImVec2(rightColX, ctPos.y + 105));
-        if (DrawAimbotBox("AUTOMATIC", "Macro Tự Động Dùng Chiêu", self.italic, self.icon131, "btnAuto")) { Settings::Tab = 3; TriggerHapticFeedback(); }
-        
-        ImGui::SetCursorScreenPos(ImVec2(rightColX, ctPos.y + 165));
-        if (DrawAimbotBox("MOD SKIN", "Mod Ngoại Hình | Rank", self.italic, self.icon131, "btnMod")) { Settings::Tab = 5; TriggerHapticFeedback(); }
-
-        ImGui::SetCursorScreenPos(ImVec2(rightColX, ctPos.y + 225));
-        if (DrawAimbotBox("MORE", "Chức năng Giải trí", self.italic, self.icon131, "btnMore")) { Settings::Tab = 7; TriggerHapticFeedback(); }
-        
-      } 
-      else if (Settings::Tab == 2) {
-        // TAB 2: AIMBOT
-        ImGui::SetWindowFontScale(2.2f);
-        ctDraw->AddText(ctPos + ImVec2(10, 5), IM_COL32(255, 70, 85, 255), "AIMBOT");
-        ctDraw->AddText(ctPos + ImVec2(110, 5), IM_COL32(200, 200, 200, 255), "HỖ TRỢ ĐỊNH HƯỚNG");
-
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, ctPos.y + 50));
-        DrawToggleBoxdaihon("AIMBOT", "Bật Tắt Aimbot Chiêu", "aimbot_toggle", Aimbot, self.italic, self.icon131);
-        if (ImGui::IsItemClicked()) { Aimbot = !Aimbot; TriggerHapticFeedback(); }
-
-        if (Aimbot) {
-            float y = ctPos.y + 115;
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-            Checkbox(AimbotElsu, "Aimbot Elsu", "Ghim chiêu 2 Elsu", self.italic);
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-            Checkbox(AimbotYorn, "Aimbot Yorn", "Ghim chiêu Yorn", self.italic);
-
-            y += 45;
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-            Checkbox(AimbotJoker, "Aimbot Joker", "Ghim chiêu Joker", self.italic);
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-            Checkbox(AimbotGrakk, "Aimbot Grakk", "Ghim chiêu Grakk", self.italic);
-
-            y += 45;
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-            Checkbox(AimbotIggy, "Aimbot Iggy", "Ghim chiêu Iggy", self.italic);
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-            Checkbox(AimbotRyoma, "Aimbot Ryoma", "Ghim chiêu Ryoma", self.italic);
-
-            y += 45;
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-            Checkbox(AimbotGildur, "Aimbot Gildur", "Ghim chiêu Gildur", self.italic);
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-            Checkbox(AimbotRaz, "Aimbot Raz", "Ghim chiêu Raz", self.italic);
-            
-            y += 45;
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-            Checkbox(AimbotIllu, "Aimbot Illumia", "Ghim chiêu Illumia", self.italic);
-            ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-            Checkbox(AimbotDirak, "Aimbot Dirak", "Ghim chiêu Dirak", self.italic);
-        }
-      }
-      else if (Settings::Tab == 3) {
-        // TAB 3: AUTOPLAY / MACRO
-        ImGui::SetWindowFontScale(2.2f);
-        ctDraw->AddText(ctPos + ImVec2(10, 5), IM_COL32(255, 70, 85, 255), "AUTOPLAY");
-        ctDraw->AddText(ctPos + ImVec2(130, 5), IM_COL32(200, 200, 200, 255), "TỰ ĐỘNG MACRO");
-
-        float y = ctPos.y + 50;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        DrawToggleBoxdaihon("MACRO TỰ ĐỘNG", "Tự đánh liên hoàn", "macro_toggle", macrotudong, self.italic, self.icon131);
-        if (ImGui::IsItemClicked()) { macrotudong = !macrotudong; TriggerHapticFeedback(); }
-
-        y += 65;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        Checkbox(AutoBocPha, "Auto Bộc Phá", "Tự động dùng bộc phá", self.italic);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-        Checkbox(AutoTrungTri, "Auto Trừng Trị", "Tự động trừng trị quái", self.italic);
-
-        y += 45;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        Checkbox(RongTaThan, "Rồng / Tà Thần", "Ưu tiên Rồng/Tà Thần", self.italic);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-        Checkbox(AutoChoang, "Auto Choáng", "Tự dùng choáng", self.italic);
-
-        y += 45;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        Checkbox(AutoQuacam, "Auto Quả Cầu", "Tự kích hoạt quả cầu", self.italic);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-        Checkbox(AutoNhamThach, "Auto Nham Thạch", "Tự kích nham thạch", self.italic);
-        
-        y += 45;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        Checkbox(TuMuaBan, "Tự Động Mua Bán", "Tự đổi trang bị (Giáp hs...)", self.italic);
-      }
-      else if (Settings::Tab == 5) {
-        // TAB 5: MOD
-        ImGui::SetWindowFontScale(2.2f);
-        ctDraw->AddText(ctPos + ImVec2(10, 5), IM_COL32(255, 70, 85, 255), "MOD SKIN");
-        ctDraw->AddText(ctPos + ImVec2(130, 5), IM_COL32(200, 200, 200, 255), "HIỆU ỨNG TÙY CHỈNH");
-
-        float y = ctPos.y + 50;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        if (DrawAimbotBoxdaihon("MOD SKIN FILE", "Mod Qua File / Link", self.italic, self.icon131, "btnModSkin")) {
-            thongbaomodskin = true;
-            TriggerHapticFeedback();
-        }
-
-        y += 65;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        if (DrawAimbotBoxdaihon("XÓA MOD", "Xóa Mod / Cập Nhật", self.italic, self.icon131, "btnXoaMod")) {
-            MenDeal = false;
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"XOÁ MOD SKIN ?" message:nil preferredStyle:UIAlertControllerStyleAlert];
-            UIAlertAction *clear = [UIAlertAction actionWithTitle:@"XOÁ MOD SKIN" style:UIAlertActionStyleDefault handler:^(UIAlertAction *_Nonnull action) { [ModSkinDSGM RemoveModDSGM]; }];
-            UIAlertAction *force = [UIAlertAction actionWithTitle:@"FORCE UPDATE" style:UIAlertActionStyleDefault handler:^(UIAlertAction *_Nonnull action) { [[maintool sharemain] xoamod]; }];
-            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleDefault handler:nil];
-            [alert addAction:clear];
-            [alert addAction:force];
-            [alert addAction:okAction];
-            UIViewController *viewController = [UIApplication sharedApplication].keyWindow.rootViewController;
-            [viewController presentViewController:alert animated:YES completion:nil];
-            TriggerHapticFeedback();
-        }
-
-        y += 65;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        if (DrawAimbotBoxdaihon("SAVE ACCOUNT", "Đổi Tài Khoản Nhanh", self.italic, self.icon131, "btnSaveAcc")) {
-            MenDeal = false;
-            [[maintool sharemain] LoadAcc];
-            [[maintool sharemain] ChangeAccount];
-            TriggerHapticFeedback();
-        }
-
-        y += 65;
-        ImVec2 size = ImVec2(350.0f, 40.0f);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        if (ImGui::InvisibleButton("doiten", size)) {
+        // Đổi tên card
+        {
+          ImVec2 cardPos = ImGui::GetCursorScreenPos();
+          float cw = ImGui::GetContentRegionAvail().x;
+          ImGui::SetCursorScreenPos(cardPos);
+          if (ImGui::InvisibleButton("doiten", ImVec2(cw, 56.0f))) {
             doiten = !doiten;
             MenDeal = false;
             if (doiten) {
-                UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"LƯU Ý" message:@"Sau khi nhập tên thì hãy nhấn lại chức năng để đổi lại sang màu đỏ này rồi nhấn đổi để đổi tên thành công" preferredStyle:UIAlertControllerStyleAlert];
-                UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-                UIViewController *rootVC = keyWindow.rootViewController;
-                [rootVC presentViewController:alert animated:YES completion:nil];
-                UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil];
-                [alert addAction:okAction];
+              UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"LƯU Ý" message:@"Sau khi nhập tên thì hãy nhấn lại chức năng để đổi lại sang màu đỏ rồi nhấn đổi để đổi tên thành công" preferredStyle:UIAlertControllerStyleAlert];
+              UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
+              UIViewController *rootVC = keyWindow.rootViewController;
+              [rootVC presentViewController:alert animated:YES completion:nil];
+              UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil];
+              [alert addAction:okAction];
             }
+          }
+          ImDrawList *cdl = ImGui::GetWindowDrawList();
+          ImU32 cbg = doiten ? IM_COL32(10, 200, 255, 60) : IM_COL32(255, 255, 255, 11);
+          ImU32 cbrd = doiten ? IM_COL32(10, 200, 255, 180) : IM_COL32(255, 255, 255, 28);
+          cdl->AddRectFilled(cardPos, ImVec2(cardPos.x + cw, cardPos.y + 56), cbg, 14.0f);
+          cdl->AddRect(cardPos, ImVec2(cardPos.x + cw, cardPos.y + 56), cbrd, 14.0f, 0, 1.2f);
+          ImGui::SetCursorScreenPos(ImVec2(cardPos.x + 14, cardPos.y + 10));
+          ImGui::SetWindowFontScale(1.55f);
+          ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(240, 240, 245, 255));
+          ImGui::TextUnformatted("Doi Ten Dai (Ten Account)");
+          ImGui::PopStyleColor();
+          ImGui::SetCursorScreenPos(ImVec2(cardPos.x + 14, cardPos.y + 31));
+          ImGui::SetWindowFontScale(1.0f);
+          ImGui::PushFont(self.italic);
+          ImGui::PushStyleColor(ImGuiCol_Text, doiten ? IM_COL32(10,200,255,200) : IM_COL32(130,130,145,255));
+          ImGui::TextUnformatted(doiten ? "Dang bat - nhan de tat" : "Nhan de doi ten account");
+          ImGui::PopStyleColor();
+          ImGui::PopFont();
+          ImGui::SetCursorScreenPos(ImVec2(cardPos.x, cardPos.y + 56 + 8));
         }
-        ImU32 bgColor = doiten ? IM_COL32(255, 70, 85, 255) : IM_COL32(50, 50, 55, 255);
-        ctDraw->AddRectFilled(ImVec2(ctPos.x + 10, y), ImVec2(ctPos.x + 10 + size.x, y + size.y), bgColor, 15.0f);
-        ImGui::SetWindowFontScale(1.4f);
-        const char *label = "ĐỔI TÊN DÀI ( TÊN ACCOUNT )";
-        ImVec2 textSize = ImGui::CalcTextSize(label);
-        ctDraw->AddText(ImVec2(ctPos.x + 10 + (size.x - textSize.x) / 2.0f, y + (size.y - textSize.y) / 2.0f), IM_COL32_WHITE, label);
-      }
-      else if (Settings::Tab == 6) {
-        // TAB 6: INFORMATION
-        ImGui::SetWindowFontScale(2.2f);
-        ctDraw->AddText(ctPos + ImVec2(10, 5), IM_COL32(255, 70, 85, 255), "INFORMATION");
 
-        float y = ctPos.y + 50;
-        ImVec2 btnSize = ImVec2(187, 55);
-        
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        if (ImGui::InvisibleButton("btn_open", btnSize)) {}
-        ctDraw->AddRect(ImVec2(ctPos.x + 10, y), ImVec2(ctPos.x + 10 + btnSize.x, y + btnSize.y), IM_COL32(255, 70, 85, 100), 10.0f);
-        ImGui::SetWindowFontScale(1.5f);
-        ctDraw->AddText(ImVec2(ctPos.x + 10 + 60, y + 15), IM_COL32(255, 255, 255, 255), "OPEN");
-
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 210, y));
-        if (ImGui::InvisibleButton("btn_close", btnSize)) {
-            MenDeal = false;
-            [[maintool sharemain] openAppDirectory];
+      } else if (Settings::Tab == 6) {
+        // INFORMATION
+        ImGui::Spacing();
+        if (iOSCard("Mo Thu Muc App", "Xem file & thu muc cai dat", self.italic, "btn_close_dir")) {
+          MenDeal = false;
+          [[maintool sharemain] openAppDirectory];
         }
-        ctDraw->AddRect(ImVec2(ctPos.x + 210, y), ImVec2(ctPos.x + 210 + btnSize.x, y + btnSize.y), IM_COL32(255, 70, 85, 100), 10.0f);
-        ctDraw->AddText(ImVec2(ctPos.x + 210 + 55, y + 15), IM_COL32(255, 255, 255, 255), "CLOSE");
-
-        y += 80;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        if (Checkbox(ANICON, "Ẩn Icon", "Chạm 3 ngón 3 lần để mở lại menu", self.italic)) {
+        ImGui::Spacing();
+        iOSToggle(ANICON, "An Icon Menu", "Cham 3 ngon 3 lan de mo lai", self.italic, "t_anicon");
+        // Save ANICON state when changed
+        {
+          static bool prevANICON = ANICON;
+          if (prevANICON != ANICON) {
+            prevANICON = ANICON;
             saveStateBool(kANICONStateKey, ANICON);
             MenuLoad *menuLoadInstance = [MenuLoad createInstance];
             [menuLoadInstance hidemenuBtn];
+          }
+        }
+
+      } else if (Settings::Tab == 7) {
+        // EXTRA
+        ImGui::Spacing();
+        iOSToggle(spamchat, "Spam Chat x10",   "Chat lien tuc 10 lan",           self.italic, "t_spam");
+        iOSToggle(balo,     "Ban Do Balo",      "Moi mon gia 1 vang",             self.italic, "t_balo");
+        iOSToggle(tkms,     "Buff No",          "Khong duoc lam dung!",           self.italic, "t_tkms");
+        iOSToggle(autowin,  "Auto Win",         "Vao game tu win",                self.italic, "t_autowin");
+        iOSToggle(nocd,     "No Cooldown",      "Xa chieu thoai mai",             self.italic, "t_nocd");
+        iOSToggle(onehit,   "One Hit",          "Damage 99999999",                self.italic, "t_onehit");
+      }
+
+      ImGui::Unindent(14.0f);
+      ImGui::EndChild(); // ##iosContent
+
+      // ─── Bottom Dock Navigation ───────────────────────────────────────
+      {
+        float dockY = windowPos.y + windowSize.y - DOCK_H;
+        ImVec2 dockMin = ImVec2(windowPos.x, dockY);
+        ImVec2 dockMax = ImVec2(windowPos.x + windowSize.x, dockY + DOCK_H);
+
+        // Dock glass background
+        draw->AddRectFilled(dockMin, dockMax, IM_COL32(18, 18, 24, 220), 0.0f);
+        draw->AddLine(ImVec2(dockMin.x + 16, dockMin.y),
+                      ImVec2(dockMax.x - 16, dockMin.y),
+                      IM_COL32(255, 255, 255, 22));
+
+        // Tab definitions: {tabId, label}
+        struct DockTab { int id; const char *label; };
+        DockTab tabs[] = { {1,"Home"}, {2,"Aim"}, {3,"Auto"}, {5,"Mod"}, {6,"Info"}, {7,"Extra"} };
+        int numTabs = 6;
+        float btnW = windowSize.x / numTabs;
+
+        for (int i = 0; i < numTabs; i++) {
+          bool isActive = (Settings::Tab == tabs[i].id);
+          ImVec2 btnMin = ImVec2(dockMin.x + i * btnW, dockMin.y);
+          ImVec2 btnMax = ImVec2(btnMin.x + btnW, dockMax.y);
+          ImVec2 center = ImVec2((btnMin.x + btnMax.x) * 0.5f, (btnMin.y + btnMax.y) * 0.5f);
+
+          // Hit area
+          ImGui::SetCursorScreenPos(btnMin);
+          char dockId[16]; sprintf(dockId, "dock%d", tabs[i].id);
+          if (ImGui::InvisibleButton(dockId, ImVec2(btnW, DOCK_H))) {
+            Settings::Tab = tabs[i].id;
+            TriggerHapticFeedback();
+          }
+          bool hovDock = ImGui::IsItemHovered();
+
+          // Active indicator pill at top
+          if (isActive) {
+            float pillW = 28.0f, pillH = 3.0f;
+            draw->AddRectFilled(ImVec2(center.x - pillW * 0.5f, btnMin.y + 4),
+                                ImVec2(center.x + pillW * 0.5f, btnMin.y + 4 + pillH),
+                                IM_COL32(10, 200, 255, 230), pillH * 0.5f);
+          }
+
+          // Label
+          ImGui::SetCursorScreenPos(ImVec2(btnMin.x, center.y - 8));
+          ImGui::SetWindowFontScale(1.15f);
+          ImU32 txtCol = isActive ? IM_COL32(10, 200, 255, 255) :
+                         (hovDock ? IM_COL32(200, 200, 210, 255) : IM_COL32(110, 110, 125, 255));
+          ImVec2 tsize = ImGui::CalcTextSize(tabs[i].label);
+          draw->AddText(ImVec2(center.x - tsize.x * 0.5f, center.y - tsize.y * 0.5f),
+                        txtCol, tabs[i].label);
         }
       }
-      else if (Settings::Tab == 7) {
-        // TAB 7: EXTRA / MORE
-        ImGui::SetWindowFontScale(2.2f);
-        ctDraw->AddText(ctPos + ImVec2(10, 5), IM_COL32(255, 70, 85, 255), "EXTRA");
-        ctDraw->AddText(ctPos + ImVec2(90, 5), IM_COL32(200, 200, 200, 255), "GIẢI TRÍ");
 
-        float y = ctPos.y + 50;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        Checkbox(spamchat, "Spam Chat x10", "Chat Liên Tục 10 Lần", self.italic);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-        Checkbox(balo, "Bán Đồ Balo", "Mỗi Món Giá 1 Vàng", self.italic);
-
-        y += 45;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        Checkbox(tkms, "Buff Nổ", "Không Được Lạm Dụng!", self.italic);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-        Checkbox(autowin, "Auto Win", "Vào Game Tự Win", self.italic);
-
-        y += 45;
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 10, y));
-        Checkbox(nocd, "No Cooldown", "Xả Chiêu Thoải Mái", self.italic);
-        ImGui::SetCursorScreenPos(ImVec2(ctPos.x + 200, y));
-        Checkbox(onehit, "One Hit", "Dame 99999999", self.italic);
-      }
-
-      ImGui::PopFont();
-      ImGui::EndChild(); // End Content Column
-
-      ImDrawList *backdraw = ImGui::GetBackgroundDrawList();
-      backdraw->AddRectFilled(ImVec2(0, 0), ImGui::GetIO().DisplaySize, IM_COL32(0, 0, 0, 150));
       ImGui::End();
+
+
+
+
 
 
       switch (box) {
         case 0:
           PlayerBox = true;
           ESP3DBox = false;
-
           break;
         case 1:
           PlayerBox = false;
@@ -1510,7 +1274,11 @@ bool Checkbox(bool &funcFlag, const char *funcLabel, const char *funcDescription
           ESP3DBox = false;
           break;
       }
+
     }
+
+
+
     ImDrawList *draw_list = ImGui::GetBackgroundDrawList();
     DrawESP(draw_list);
     if (ESPEnable) {
@@ -1536,32 +1304,39 @@ bool Checkbox(bool &funcFlag, const char *funcLabel, const char *funcDescription
     }
 
     ImGuiStyle &style = ImGui::GetStyle();
-
     ImVec4 *colors = style.Colors;
-    colors[ImGuiCol_WindowBg]       = ImVec4(0.08f, 0.08f, 0.10f, 0.95f);
-    colors[ImGuiCol_Border]         = ImVec4(1.00f, 0.34f, 0.40f, 0.40f);
-    colors[ImGuiCol_FrameBg]        = ImVec4(0.15f, 0.15f, 0.18f, 1.00f);
-    colors[ImGuiCol_FrameBgHovered] = ImVec4(0.20f, 0.20f, 0.24f, 1.00f);
-    colors[ImGuiCol_FrameBgActive]  = ImVec4(1.00f, 0.34f, 0.40f, 0.60f);
-    colors[ImGuiCol_CheckMark]      = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-    colors[ImGuiCol_SliderGrab]     = ImVec4(1.00f, 0.34f, 0.40f, 1.00f);
-    colors[ImGuiCol_SliderGrabActive]= ImVec4(1.00f, 0.45f, 0.50f, 1.00f);
-    colors[ImGuiCol_Button]         = ImVec4(0.15f, 0.15f, 0.18f, 1.00f);
-    colors[ImGuiCol_ButtonHovered]  = ImVec4(1.00f, 0.34f, 0.40f, 0.80f);
-    colors[ImGuiCol_ButtonActive]   = ImVec4(1.00f, 0.34f, 0.40f, 1.00f);
-    colors[ImGuiCol_Text]           = ImVec4(0.95f, 0.95f, 0.95f, 1.00f);
+    // iOS Glassmorphism palette — translucent dark, cyan accent
+    colors[ImGuiCol_WindowBg]        = ImVec4(0.05f, 0.05f, 0.07f, 0.00f); // fully transparent (we draw our own bg)
+    colors[ImGuiCol_ChildBg]         = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_Border]          = ImVec4(1.00f, 1.00f, 1.00f, 0.08f);
+    colors[ImGuiCol_FrameBg]         = ImVec4(0.12f, 0.12f, 0.15f, 1.00f);
+    colors[ImGuiCol_FrameBgHovered]  = ImVec4(0.18f, 0.18f, 0.22f, 1.00f);
+    colors[ImGuiCol_FrameBgActive]   = ImVec4(0.04f, 0.78f, 1.00f, 0.40f);
+    colors[ImGuiCol_CheckMark]       = ImVec4(0.04f, 0.78f, 1.00f, 1.00f);
+    colors[ImGuiCol_SliderGrab]      = ImVec4(0.04f, 0.78f, 1.00f, 1.00f);
+    colors[ImGuiCol_SliderGrabActive]= ImVec4(0.10f, 0.90f, 1.00f, 1.00f);
+    colors[ImGuiCol_Button]          = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
+    colors[ImGuiCol_ButtonHovered]   = ImVec4(1.00f, 1.00f, 1.00f, 0.12f);
+    colors[ImGuiCol_ButtonActive]    = ImVec4(0.04f, 0.78f, 1.00f, 0.50f);
+    colors[ImGuiCol_Header]          = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_HeaderHovered]   = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
+    colors[ImGuiCol_Text]            = ImVec4(0.94f, 0.94f, 0.96f, 1.00f);
+    colors[ImGuiCol_TextDisabled]    = ImVec4(0.50f, 0.50f, 0.55f, 1.00f);
+    colors[ImGuiCol_ScrollbarBg]     = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
+    colors[ImGuiCol_ScrollbarGrab]   = ImVec4(1.00f, 1.00f, 1.00f, 0.15f);
 
-    style.ChildRounding = 12.0f;
-    style.WindowPadding = ImVec2(-1, -1);
-    style.WindowRounding = 20.0f;
-    style.FramePadding = ImVec2(12, 8);
-    style.FrameRounding = 8.0f;
-    style.ScrollbarSize = 20.0f;
+    style.WindowPadding   = ImVec2(0, 0);
+    style.WindowRounding  = 20.0f;
+    style.ChildRounding   = 14.0f;
+    style.FrameRounding   = 10.0f;
+    style.GrabRounding    = 10.0f;
+    style.PopupRounding   = 14.0f;
     style.ScrollbarRounding = 10.0f;
-    style.GrabMinSize = 25.0f;
-    style.GrabRounding = 12.0f;
-    style.PopupRounding = 12.0f;
-    style.Alpha = 1.0f;
+    style.FramePadding    = ImVec2(10, 6);
+    style.ItemSpacing     = ImVec2(8, 6);
+    style.ScrollbarSize   = 6.0f;
+    style.GrabMinSize     = 20.0f;
+    style.Alpha           = 1.0f;
 
     ImGui::Render();
     ImDrawData *draw_data = ImGui::GetDrawData();
