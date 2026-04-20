@@ -28,10 +28,10 @@ jobs:
           
       - name: Build Project (Make)
         run: |
-          make package FINALPACKAGE=1
+          make FINALPACKAGE=1
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: TruongMods_Compiled
-          path: packages/
+          name: TruongMods_Framework
+          path: .theos/obj/ # Toàn bộ file dylib/framework build xong sẽ nằm trong thư mục ẩn này
