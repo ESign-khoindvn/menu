@@ -10,7 +10,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4  # Cập nhật thành v4
+        uses: actions/checkout@v4
 
       - name: Install Theos
         run: |
@@ -19,6 +19,7 @@ jobs:
           
       - name: Download iOS SDK
         run: |
+          rm -rf ~/theos/sdks
           git clone https://github.com/theos/sdks.git ~/theos/sdks
           
       - name: Build Project (Make)
@@ -26,7 +27,7 @@ jobs:
           make package FINALPACKAGE=1
           
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4  # Cập nhật thành v4
+        uses: actions/upload-artifact@v4
         with:
           name: TruongMods_Compiled
-          path: .theos/obj/debug/ # File dylib/framework sẽ nằm ở đây
+          path: packages/ # Theos lưu file .deb (.framework đóng gói) ở thư mục packages/
