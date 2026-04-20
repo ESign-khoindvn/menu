@@ -1,0 +1,32 @@
+name: Build Theos Project
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Cho phép bạn bấm nút Build thủ công
+
+jobs:
+  build:
+    runs-on: macos-latest # Sử dụng máy ảo Mac của GitHub
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+          
+      - name: Download iOS SDK
+        run: |
+          git clone https://github.com/theos/sdks.git ~/theos/sdks
+          
+      - name: Build Project (Make)
+        run: |
+          make package FINALPACKAGE=1
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: TruongMods_Compiled
+          path: .theos/obj/debug/ # Hoặc đường dẫn file framework xuất ra
