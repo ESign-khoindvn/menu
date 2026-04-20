@@ -3,14 +3,14 @@ name: Build Theos Project
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch: # Cho phép bạn bấm nút Build thủ công
+  workflow_dispatch: 
 
 jobs:
   build:
-    runs-on: macos-latest # Sử dụng máy ảo Mac của GitHub
+    runs-on: macos-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # Cập nhật thành v4
 
       - name: Install Theos
         run: |
@@ -26,7 +26,7 @@ jobs:
           make package FINALPACKAGE=1
           
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  # Cập nhật thành v4
         with:
           name: TruongMods_Compiled
-          path: .theos/obj/debug/ # Hoặc đường dẫn file framework xuất ra
+          path: .theos/obj/debug/ # File dylib/framework sẽ nằm ở đây
