@@ -12,6 +12,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Install Dependencies
+        run: |
+          brew install ldid xz
+
       - name: Install Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git ~/theos
@@ -30,4 +34,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: TruongMods_Compiled
-          path: packages/ # Theos lưu file .deb (.framework đóng gói) ở thư mục packages/
+          path: packages/
